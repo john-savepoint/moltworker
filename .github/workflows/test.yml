@@ -114,7 +114,7 @@ jobs:
           AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
           AI_GATEWAY_BASE_URL: ${{ secrets.AI_GATEWAY_BASE_URL }}
           # Unique test run ID for parallel isolation
-          E2E_TEST_RUN_ID: ${{ github.run_id }}-${{ matrix.config.name }}
+          E2E_TEST_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.config.name }}
           # Matrix-specific config
           TELEGRAM_BOT_TOKEN: ${{ matrix.config.env.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_DM_POLICY: ${{ matrix.config.env.TELEGRAM_DM_POLICY }}
