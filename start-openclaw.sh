@@ -105,7 +105,10 @@ if [ ! -f "$CONFIG_FILE" ]; then
     echo "No existing config found, running openclaw onboard..."
 
     AUTH_ARGS=""
-    if [ -n "$CLOUDFLARE_AI_GATEWAY_API_KEY" ] && [ -n "$CF_AI_GATEWAY_ACCOUNT_ID" ] && [ -n "$CF_AI_GATEWAY_GATEWAY_ID" ]; then
+    if [ -n "$OLLAMA_MODEL" ]; then
+        # Ollama cloud mode: skip onboard auth (configured in patch step below)
+        AUTH_ARGS=""
+    elif [ -n "$CLOUDFLARE_AI_GATEWAY_API_KEY" ] && [ -n "$CF_AI_GATEWAY_ACCOUNT_ID" ] && [ -n "$CF_AI_GATEWAY_GATEWAY_ID" ]; then
         AUTH_ARGS="--auth-choice cloudflare-ai-gateway-api-key \
             --cloudflare-ai-gateway-account-id $CF_AI_GATEWAY_ACCOUNT_ID \
             --cloudflare-ai-gateway-gateway-id $CF_AI_GATEWAY_GATEWAY_ID \
@@ -219,6 +222,18 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     }
 }
 
+// Ollama cloud model configuration (OLLAMA_MODEL=glm-5:cloud)
+// Sets the default model to use Ollama's cloud proxy running on localhost
+if (process.env.OLLAMA_MODEL) {
+    const model = process.env.OLLAMA_MODEL;
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = { primary: 'ollama/' + model };
+    config.agents.defaults.models = {};
+    config.agents.defaults.models['ollama/' + model] = {};
+    console.log('Ollama cloud model configured: ollama/' + model);
+}
+
 // Telegram configuration
 // Overwrite entire channel object to drop stale keys from old R2 backups
 // that would fail OpenClaw's strict config validation (see #47)
@@ -307,6 +322,32 @@ if r2_configured; then
         done
     ) &
     echo "Background sync loop started (PID: $!)"
+fi
+
+# ============================================================
+# START OLLAMA (if using cloud models)
+# ============================================================
+if [ -n "$OLLAMA_MODEL" ]; then
+    echo "Starting Ollama daemon for cloud model proxy..."
+    export OLLAMA_API_KEY="${OLLAMA_API_KEY:-ollama-local}"
+
+    # Start Ollama serve in the background
+    ollama serve > /tmp/ollama.log 2>&1 &
+    OLLAMA_PID=$!
+    echo "Ollama daemon started (PID: $OLLAMA_PID)"
+
+    # Wait for Ollama to be ready
+    for i in $(seq 1 30); do
+        if curl -sf http://127.0.0.1:11434/api/tags > /dev/null 2>&1; then
+            echo "Ollama is ready"
+            break
+        fi
+        sleep 1
+    done
+
+    # Pull the cloud model reference (registers it, no weights downloaded)
+    ollama pull "$OLLAMA_MODEL"
+    echo "Ollama cloud model '$OLLAMA_MODEL' registered"
 fi
 
 # ============================================================

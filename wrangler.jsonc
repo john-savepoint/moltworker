@@ -73,6 +73,9 @@
   // AI Provider (at least one set required):
   // - ANTHROPIC_API_KEY: Direct Anthropic API key
   // - OPENAI_API_KEY: Direct OpenAI API key
+  // - Ollama cloud models (no API key cost):
+  //   - OLLAMA_MODEL: Cloud model tag (e.g., "glm-5:cloud", "qwen3-coder-next:cloud")
+  //   - OLLAMA_API_KEY: Optional, defaults to "ollama-local"
   // - Cloudflare AI Gateway (alternative to direct keys):
   //   - CLOUDFLARE_AI_GATEWAY_API_KEY: API key for requests through the gateway
   //   - CF_AI_GATEWAY_ACCOUNT_ID: Your Cloudflare account ID

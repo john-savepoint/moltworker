@@ -20,6 +20,12 @@ RUN ARCH="$(dpkg --print-architecture)" \
 # Install pnpm globally
 RUN npm install -g pnpm
 
+# Install Ollama (lightweight proxy daemon for Ollama cloud models)
+# Ollama binary is ~100MB and acts as a proxy to ollama.com cloud models
+# No local model weights are downloaded — cloud models stream from ollama.com
+RUN curl -fsSL https://ollama.com/install.sh | sh \
+    && ollama --version
+
 # Install OpenClaw (formerly clawdbot/moltbot)
 # Pin to specific version for reproducible builds
 RUN npm install -g openclaw@2026.2.3 \
